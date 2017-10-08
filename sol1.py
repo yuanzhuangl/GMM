@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 
 
 
-class EM_Object(object):
+class self(object):
 
     def __init__(self,files,k):
         self.data_file = files[0]
@@ -68,109 +68,110 @@ class EM_Object(object):
         # init identity matrix as initial covariance matrix
         self.init_cov = [mat(np.identity(self.feature_count)) for _ in range(self.k)]
 
-#calculate multivariate Normal distribution probabilities of each sample(gamma)
-def G_prob(x, mu, cov):
-    n = len(x[0])
-    e_power = float(-0.5 * (x - mu) * (cov.I) * ((x - mu).T))
-    Deno = power(2 * pi, n / 2) * power(linalg.det(cov), 0.5)
-    gamma = power(e, e_power) / Deno
-    return gamma
+    #calculate multivariate Normal distribution probabilities of each sample(gamma)
+    def G_prob(self, x, mu, cov):
+        n = len(x[0])
+        e_power = float(-0.5 * (x - mu) * (cov.I) * ((x - mu).T))
+        Deno = power(2 * pi, n / 2) * power(linalg.det(cov), 0.5)
+        gamma = power(e, e_power) / Deno
+        return gamma
 
 
-#implement EM Algorithm
-def EM(EM_Object):
-    # init parameters
-    phi = EM_Object.init_phi
-    cov = EM_Object.init_cov
-    mu = EM_Object.init_mu
-    k = EM_Object.k
+    #implement EM Algorithm
+    def EM(self):
+        # init parameters
+        phi = self.init_phi
+        cov = self.init_cov
+        mu = self.init_mu
+        k = self.k
 
-    # init probabilities set
-    gamma = mat(zeros((EM_Object.sample_count, k)))
+        # init probabilities set
+        gamma = mat(zeros((self.sample_count, k)))
 
-    # Start Iteration
-    dif = 1
-    threshold = 1e-3
-    while dif > threshold:
-        mu_pre = [item for item in mu]
-        # step E
-        for j in range(EM_Object.sample_count):
-            px = 0
+        # Start Iteration
+        dif = 1
+        threshold = 1e-3
+        while dif > threshold:
+            mu_pre = [item for item in mu]
+            # step E
+            for j in range(self.sample_count):
+                px = 0
+                for i in range(k):
+                    gamma[j, i] = phi[i] * self.G_prob(self.X[j, :], mu[i], cov[i])
+                    px += gamma[j, i]
+                for i in range(k):
+                    gamma[j, i] /= px
+            sum_gamma = sum(gamma, axis=0)
+
+            # step M
             for i in range(k):
-                gamma[j, i] = phi[i] * G_prob(EM_Object.X[j, :], mu[i], cov[i])
-                px += gamma[j, i]
+                mu[i] = mat(zeros((1, self.feature_count)))
+                cov[i] = mat(zeros((self.feature_count, self.feature_count)))
+                for j in range(self.sample_count):
+                    mu[i] += gamma[j, i] * self.X[j, :]
+                mu[i] /= sum_gamma[0, i]
+                for j in range(self.sample_count):
+                    cov[i] += gamma[j, i] * (self.X[j, :] - mu[i]).T * (self.X[j, :] - mu[i])
+                cov[i] /= sum_gamma[0, i]
+                phi[i] = sum_gamma[0, i] / self.sample_count
+
+            # check whether mu are convergence
+            dif = 0
             for i in range(k):
-                gamma[j, i] /= px
-        sum_gamma = sum(gamma, axis=0)
+                distance = (mu[i]-mu_pre[i])*(mu[i]-mu_pre[i]).T
+                dif += distance[0,0]
+        return gamma
 
-        # step M
+
+    def cluster(self):
+        # init centroids set for different classes
+        classification = mat(zeros((self.sample_count, 2)))
+        gamma = self.EM()
+
+
+        for i in range(self.sample_count):
+            # Align to groups (return the index of biggest probability, and such prob)
+            classification[i, :] = argmax(gamma[i, :]), amax(gamma[i, :])
+            temp = [item for item in squeeze(np.asarray(self.X[i, :]))] + [argmax(gamma[i, :]), amax(gamma[i, :])]
+            self.result.loc[i] = temp
+
+            # update centroids
+        for j in range(self.k):
+            pointsInCluster = self.X[nonzero(classification[:, 0].A == j)[0]]
+            self.centroids.append(mean(pointsInCluster, axis=0))
+
+        # set 'class' column data type to int
+        self.result['class'] = pd.to_numeric(self.result['class'], downcast='signed', errors='coerce')
+
+
+
+    def plot(self):
+
+
+        # set dot type and color
+        mark_sample = ['ro', 'bo', 'go', 'ok']
+        mark_centroids = ['Dr', 'Db', 'Dg', 'Dk']
+        if k > len(mark_sample):
+            print("k is too large")
+            return
+
+        fig = plt.figure()
+        # plot all samples
+        for i in range(self.sample_count):
+            markIndex = self.result['class'].iloc[i]
+            plt.plot(self.result['sepal length'].iloc[i], self.result['sepal width'].iloc[i], mark_sample[markIndex])
+
+        # plot centroids
         for i in range(k):
-            mu[i] = mat(zeros((1, EM_Object.feature_count)))
-            cov[i] = mat(zeros((EM_Object.feature_count, EM_Object.feature_count)))
-            for j in range(EM_Object.sample_count):
-                mu[i] += gamma[j, i] * EM_Object.X[j, :]
-            mu[i] /= sum_gamma[0, i]
-            for j in range(EM_Object.sample_count):
-                cov[i] += gamma[j, i] * (EM_Object.X[j, :] - mu[i]).T * (EM_Object.X[j, :] - mu[i])
-            cov[i] /= sum_gamma[0, i]
-            phi[i] = sum_gamma[0, i] / EM_Object.sample_count
+            plt.plot(self.centroids[i][0, 0], self.centroids[i][0, 1], mark_centroids[i], markersize=12)
 
-        # check whether mu are convergence
-        dif = 0
-        for i in range(k):
-            distance = (mu[i]-mu_pre[i])*(mu[i]-mu_pre[i]).T
-            dif += distance[0,0]
-    return gamma
+        # set title and labels
+        fig.suptitle('Sepal data', fontsize=20)
+        plt.xlabel('sepal length in cm', fontsize=18)
+        plt.ylabel('sepal width in cm', fontsize=16)
+        fig.savefig('Output/cluster_result.png')
 
-
-def cluster(EM_Object):
-    # init centroids set for different classes
-    classification = mat(zeros((EM_Object.sample_count, 2)))
-    gamma = EM(EM_Object)
-
-
-    for i in range(EM_Object.sample_count):
-        # Align to groups (return the index of biggest probability, and such prob)
-        classification[i, :] = argmax(gamma[i, :]), amax(gamma[i, :])
-        temp = [item for item in squeeze(np.asarray(EM_Object.X[i, :]))] + [argmax(gamma[i, :]), amax(gamma[i, :])]
-        EM_Object.result.loc[i] = temp
-
-        # update centroids
-    for j in range(EM_Object.k):
-        pointsInCluster = EM_Object.X[nonzero(classification[:, 0].A == j)[0]]
-        EM_Object.centroids.append(mean(pointsInCluster, axis=0))
-
-    # set 'class' column data type to int
-    EM_Object.result['class'] = pd.to_numeric(EM_Object.result['class'],downcast='signed', errors='coerce')
-
-
-
-def plot(EM_Object):
-
-    # set dot type and color
-    mark_sample = ['ro', 'bo', 'go', 'ok']
-    mark_centroids = ['Dr', 'Db', 'Dg', 'Dk']
-    if k > len(mark_sample):
-        print("k is too large")
-        return
-
-    fig = plt.figure()
-    # plot all samples
-    for i in range(EM_Object.sample_count):
-        markIndex = EM_Object.result['class'].iloc[i]
-        plt.plot(EM_Object.result['sepal length'].iloc[i], EM_Object.result['sepal width'].iloc[i], mark_sample[markIndex])
-
-    # plot centroids
-    for i in range(k):
-        plt.plot(EM_Object.centroids[i][0, 0], EM_Object.centroids[i][0, 1], mark_centroids[i], markersize=12)
-
-    # set title and labels
-    fig.suptitle('Sepal data', fontsize=20)
-    plt.xlabel('sepal length in cm', fontsize=18)
-    plt.ylabel('sepal width in cm', fontsize=16)
-    fig.savefig('Output/cluster_result.png')
-
-    plt.show()
+        plt.show()
 
 
 
@@ -182,14 +183,14 @@ if __name__ == '__main__':
 
     # k=3
     k = int(input("Input the number of classes(try k=2,3,4):"))
-    EM_data = EM_Object(files,k)
+    EM_data = self(files, k)
     EM_data.init_par()
 
     # Clustering data
-    cluster(EM_data)
+    EM_data.cluster()
 
     # Save result
     EM_data.result.to_csv('Output/classification.csv')
 
     # Plot cluster with sepal's data
-    plot(EM_data)
+    EM_data.plot()

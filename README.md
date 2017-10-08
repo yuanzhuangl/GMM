@@ -1,2 +1,2 @@
-#Implement EM with a Gaussian Mixture Model
+# Implement EM with a Gaussian Mixture Model
 
