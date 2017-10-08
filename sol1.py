@@ -153,7 +153,7 @@ class self(object):
 
         # implement cluster
         self.cluster()
-
+        k = self.k
         # set dot type and color
         mark_sample = ['ro', 'bo', 'go', 'ok']
         mark_centroids = ['Dr', 'Db', 'Dg', 'Dk']
@@ -175,12 +175,9 @@ class self(object):
         fig.suptitle('Sepal data', fontsize=20)
         plt.xlabel('sepal length in cm', fontsize=18)
         plt.ylabel('sepal width in cm', fontsize=16)
-        fig.savefig('Output/cluster_result.png')
+        fig.savefig('Output/%s_classes_cluster_result.png'%k)
 
         plt.show()
-
-
-
 
 
 if __name__ == '__main__':
@@ -196,5 +193,5 @@ if __name__ == '__main__':
     EM_data.plot()
 
     # Save result
-    EM_data.result.to_csv('Output/classification.csv')
+    EM_data.result.to_csv('Output/classification_for_%s_classes.csv'%k)
 
