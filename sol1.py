@@ -42,7 +42,7 @@ class self(object):
                                             'petal length', 'petal width','class', 'Prob'])
         self.centroids = []
 
-    ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+    ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
     # load data as numpy array
     def load_data(self):
         data_set = loadtxt(self.data_file,delimiter=',')
@@ -53,7 +53,7 @@ class self(object):
         with open(self.feature_file,'r') as f:
             self.class_set = f.readline().split(',')
 
-    ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+    ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
     # init parameters
     def init_par(self):
         self.load_data()
@@ -68,7 +68,8 @@ class self(object):
         # init identity matrix as initial covariance matrix
         self.init_cov = [mat(np.identity(self.feature_count)) for _ in range(self.k)]
 
-    #calculate multivariate Normal distribution probabilities of each sample(gamma)
+    ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+    # calculate multivariate Normal distribution probabilities of each sample(gamma)
     def G_prob(self, x, mu, cov):
         n = len(x[0])
         e_power = float(-0.5 * (x - mu) * (cov.I) * ((x - mu).T))
@@ -76,10 +77,12 @@ class self(object):
         gamma = power(e, e_power) / Deno
         return gamma
 
-
-    #implement EM Algorithm
+    ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+    # implement EM Algorithm
     def EM(self):
+
         # init parameters
+        self.init_par()
         phi = self.init_phi
         cov = self.init_cov
         mu = self.init_mu
@@ -122,11 +125,12 @@ class self(object):
                 dif += distance[0,0]
         return gamma
 
-
+    ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+    # cluster samples to k groups
     def cluster(self):
         # init centroids set for different classes
-        classification = mat(zeros((self.sample_count, 2)))
         gamma = self.EM()
+        classification = mat(zeros((self.sample_count, 2)))
 
 
         for i in range(self.sample_count):
@@ -143,10 +147,12 @@ class self(object):
         # set 'class' column data type to int
         self.result['class'] = pd.to_numeric(self.result['class'], downcast='signed', errors='coerce')
 
-
-
+    ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+    # plot cluster
     def plot(self):
 
+        # implement cluster
+        self.cluster()
 
         # set dot type and color
         mark_sample = ['ro', 'bo', 'go', 'ok']
@@ -178,19 +184,17 @@ class self(object):
 
 
 if __name__ == '__main__':
+
     # Load data and init parameters
     files = ['Input/fisheriris.data','Input/feature.txt']
 
     # k=3
     k = int(input("Input the number of classes(try k=2,3,4):"))
     EM_data = self(files, k)
-    EM_data.init_par()
 
-    # Clustering data
-    EM_data.cluster()
+    # Plot cluster with sepal's data
+    EM_data.plot()
 
     # Save result
     EM_data.result.to_csv('Output/classification.csv')
 
-    # Plot cluster with sepal's data
-    EM_data.plot()
