@@ -187,11 +187,11 @@ if __name__ == '__main__':
 
     # k=3
     k = int(input("Input the number of classes(try k=2,3,4):"))
-    EM_data = GMM(files, k)
+    GMM_data = GMM(files, k)
 
     # Plot cluster with sepal's data
-    EM_data.plot()
+    GMM_data.plot()
 
     # Save result
-    EM_data.result.to_csv('Output/classification_for_%s_classes.csv'%k)
+    GMM_data.result.to_csv('Output/classification_for_%s_classes.csv'%k)
 
