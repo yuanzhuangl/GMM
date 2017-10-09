@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 
 
 
-class self(object):
+class GMM(object):
 
     def __init__(self,files,k):
         self.data_file = files[0]
@@ -187,7 +187,7 @@ if __name__ == '__main__':
 
     # k=3
     k = int(input("Input the number of classes(try k=2,3,4):"))
-    EM_data = self(files, k)
+    EM_data = GMM(files, k)
 
     # Plot cluster with sepal's data
     EM_data.plot()
